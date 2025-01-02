@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,11 @@ import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Download, Youtube } from 'lucide-react';
 import VideoInfo from './VideoInfo';
 import QualitySelector from './QualitySelector';
+import AudioQualitySelector from './AudioQualitySelector';
+import { ThemeToggle } from './ThemeToggle';
+import { Settings } from './Settings';
+import { SnowEffect } from './SnowEffect';
+import { RunningSanta } from './RunningSanta';
 
 export interface VideoFormat {
   format_id: string;
@@ -16,12 +21,21 @@ export interface VideoFormat {
   format_note: string;
 }
 
+export interface AudioFormat {
+  format_id: string;
+  ext: string;
+  filesize: number;
+  format_note: string;
+  abr: number;
+}
+
 export interface VideoDetails {
   title: string;
   duration: string;
   views: number;
   thumbnail: string;
-  formats: VideoFormat[];
+  video_formats: VideoFormat[];
+  audio_formats: AudioFormat[];
 }
 
 const VideoDownloader = () => {
@@ -30,8 +44,17 @@ const VideoDownloader = () => {
   const [downloading, setDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [videoDetails, setVideoDetails] = useState<VideoDetails | null>(null);
-  const [selectedFormat, setSelectedFormat] = useState<string>('');
+  const [selectedVideoFormat, setSelectedVideoFormat] = useState<string>('');
+  const [selectedAudioFormat, setSelectedAudioFormat] = useState<string>('');
+  const [savePath, setSavePath] = useState('downloads');
+  const [showSnow, setShowSnow] = useState(false);
+  const [showSanta, setShowSanta] = useState(false);
   const { toast } = useToast();
+
+  const handleSettingsChange = ({ showSnow, showSanta }: { showSnow: boolean; showSanta: boolean }) => {
+    setShowSnow(showSnow);
+    setShowSanta(showSanta);
+  };
 
   const fetchVideoInfo = async () => {
     if (!url) {
@@ -71,10 +94,10 @@ const VideoDownloader = () => {
   };
 
   const downloadVideo = async () => {
-    if (!selectedFormat) {
+    if (!selectedVideoFormat || !selectedAudioFormat) {
       toast({
         title: "Error",
-        description: "Please select a format",
+        description: "Please select both video and audio formats",
         variant: "destructive"
       });
       return;
@@ -91,7 +114,9 @@ const VideoDownloader = () => {
         },
         body: JSON.stringify({
           url,
-          format_id: selectedFormat,
+          video_format: selectedVideoFormat,
+          audio_format: selectedAudioFormat,
+          save_path: savePath,
         }),
       });
 
@@ -135,6 +160,14 @@ const VideoDownloader = () => {
   return (
     <div className="min-h-screen p-4 md:p-8">
       <div className="gradient-bg" />
+      {showSnow && <SnowEffect />}
+      {showSanta && <RunningSanta />}
+      
+      <div className="fixed top-4 right-4 flex gap-2">
+        <ThemeToggle />
+        <Settings onSettingsChange={handleSettingsChange} />
+      </div>
+
       <Card className="max-w-2xl mx-auto p-6 backdrop-blur-sm bg-background/80">
         <div className="space-y-6 animate-in">
           <div className="flex flex-col items-center gap-2 text-center">
@@ -168,16 +201,31 @@ const VideoDownloader = () => {
             <div className="space-y-4 animate-in">
               <VideoInfo details={videoDetails} />
               <QualitySelector
-                formats={videoDetails.formats}
-                selectedFormat={selectedFormat}
-                onFormatSelect={setSelectedFormat}
+                formats={videoDetails.video_formats}
+                selectedFormat={selectedVideoFormat}
+                onFormatSelect={setSelectedVideoFormat}
               />
+              <AudioQualitySelector
+                formats={videoDetails.audio_formats}
+                selectedFormat={selectedAudioFormat}
+                onFormatSelect={setSelectedAudioFormat}
+              />
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Save Location</label>
+                <Input
+                  type="text"
+                  value={savePath}
+                  onChange={(e) => setSavePath(e.target.value)}
+                  placeholder="Enter save path"
+                />
+              </div>
               
               <div className="space-y-2">
                 <Button
                   className="w-full"
                   onClick={downloadVideo}
-                  disabled={downloading || !selectedFormat}
+                  disabled={downloading || !selectedVideoFormat || !selectedAudioFormat}
                 >
                   {downloading ? (
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />

@@ -1,7 +1,8 @@
-from flask import Flask, request, Response, jsonify
+from flask import Flask, request, Response, jsonify, send_file
 from flask_cors import CORS
 import yt_dlp
 import json
+import os
 
 app = Flask(__name__)
 CORS(app)
@@ -25,7 +26,7 @@ def get_video_info():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             
-            formats = [{
+            video_formats = [{
                 'format_id': f['format_id'],
                 'ext': f['ext'],
                 'resolution': f.get('resolution', 'N/A'),
@@ -33,12 +34,21 @@ def get_video_info():
                 'format_note': f.get('format_note', '')
             } for f in info['formats'] if f.get('resolution') != 'audio only']
             
+            audio_formats = [{
+                'format_id': f['format_id'],
+                'ext': f['ext'],
+                'filesize': f.get('filesize', 0),
+                'format_note': f.get('format_note', ''),
+                'abr': f.get('abr', 0)
+            } for f in info['formats'] if f.get('resolution') == 'audio only']
+            
             return jsonify({
                 'title': info['title'],
                 'duration': format_duration(info['duration']),
                 'views': info['view_count'],
                 'thumbnail': info['thumbnail'],
-                'formats': formats
+                'video_formats': video_formats,
+                'audio_formats': audio_formats
             })
     except Exception as e:
         return jsonify({'error': str(e)}), 400
@@ -46,7 +56,12 @@ def get_video_info():
 @app.route('/download', methods=['POST'])
 def download_video():
     url = request.json.get('url')
-    format_id = request.json.get('format_id')
+    video_format = request.json.get('video_format')
+    audio_format = request.json.get('audio_format')
+    save_path = request.json.get('save_path', 'downloads')
+    
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
     
     def progress_hook(d):
         if d['status'] == 'downloading':
@@ -54,9 +69,10 @@ def download_video():
             return json.dumps({'progress': progress})
     
     ydl_opts = {
-        'format': format_id,
+        'format': f'{video_format}+{audio_format}',
         'progress_hooks': [progress_hook],
-        'outtmpl': 'downloads/%(title)s.%(ext)s'
+        'outtmpl': f'{save_path}/%(title)s.%(ext)s',
+        'merge_output_format': 'mp4'
     }
     
     def generate():
