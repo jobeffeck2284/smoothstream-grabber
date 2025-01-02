@@ -5,6 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface AudioFormat {
   format_id: string;
@@ -25,6 +26,7 @@ const AudioQualitySelector = ({
   selectedFormat,
   onFormatSelect,
 }: AudioQualitySelectorProps) => {
+  const { t } = useLanguage();
   const sortedFormats = [...formats].sort((a, b) => {
     const aSize = a.filesize || 0;
     const bSize = b.filesize || 0;
@@ -33,10 +35,10 @@ const AudioQualitySelector = ({
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium">Select Audio Quality</label>
+      <label className="text-sm font-medium">{t('selectAudioQuality')}</label>
       <Select value={selectedFormat} onValueChange={onFormatSelect}>
         <SelectTrigger>
-          <SelectValue placeholder="Choose audio quality" />
+          <SelectValue placeholder={t('selectAudioQuality')} />
         </SelectTrigger>
         <SelectContent>
           {sortedFormats.map((format) => (

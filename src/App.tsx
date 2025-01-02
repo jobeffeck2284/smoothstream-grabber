@@ -1,12 +1,15 @@
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
+import { LanguageProvider } from "./contexts/LanguageContext";
 import Index from "./pages/Index";
 
 function App() {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <Index />
-      <Toaster />
+      <LanguageProvider>
+        <Index />
+        <Toaster />
+      </LanguageProvider>
     </ThemeProvider>
   );
 }

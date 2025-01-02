@@ -5,6 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { VideoFormat } from './VideoDownloader';
 
 interface QualitySelectorProps {
@@ -18,6 +19,7 @@ const QualitySelector = ({
   selectedFormat,
   onFormatSelect,
 }: QualitySelectorProps) => {
+  const { t } = useLanguage();
   const sortedFormats = [...formats].sort((a, b) => {
     const aSize = a.filesize || 0;
     const bSize = b.filesize || 0;
@@ -26,10 +28,10 @@ const QualitySelector = ({
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium">Select Quality</label>
+      <label className="text-sm font-medium">{t('selectQuality')}</label>
       <Select value={selectedFormat} onValueChange={onFormatSelect}>
         <SelectTrigger>
-          <SelectValue placeholder="Choose video quality" />
+          <SelectValue placeholder={t('selectQuality')} />
         </SelectTrigger>
         <SelectContent>
           {sortedFormats.map((format) => (

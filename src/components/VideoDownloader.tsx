@@ -13,6 +13,8 @@ import { Settings } from './Settings';
 import { SnowEffect } from './SnowEffect';
 import { RunningSanta } from './RunningSanta';
 import { YoutubeScroll } from './YoutubeScroll';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export interface VideoFormat {
   format_id: string;
@@ -40,6 +42,7 @@ export interface VideoDetails {
 }
 
 const VideoDownloader = () => {
+  const { t } = useLanguage();
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -200,15 +203,15 @@ const VideoDownloader = () => {
         <div className="space-y-6 animate-in">
           <div className="flex flex-col items-center gap-2 text-center">
             <Youtube className="h-10 w-10 text-primary" />
-            <h1 className="text-2xl font-bold">YouTube Downloader</h1>
+            <h1 className="text-2xl font-bold">{t('title')}</h1>
             <p className="text-sm text-muted-foreground">
-              Download YouTube videos in your preferred quality
+              {t('subtitle')}
             </p>
           </div>
 
           <div className="flex gap-2">
             <Input
-              placeholder="Enter YouTube URL"
+              placeholder={t('enterUrl')}
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               className="flex-1"
@@ -220,7 +223,7 @@ const VideoDownloader = () => {
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                "Fetch Info"
+                t('fetchInfo')
               )}
             </Button>
           </div>
@@ -240,12 +243,12 @@ const VideoDownloader = () => {
               />
               
               <div className="space-y-2">
-                <label className="text-sm font-medium">Save Location</label>
+                <label className="text-sm font-medium">{t('savePath')}</label>
                 <Input
                   type="text"
                   value={savePath}
                   onChange={(e) => setSavePath(e.target.value)}
-                  placeholder="Enter save path"
+                  placeholder={t('savePath')}
                 />
               </div>
               
@@ -260,14 +263,14 @@ const VideoDownloader = () => {
                   ) : (
                     <Download className="h-4 w-4 mr-2" />
                   )}
-                  {downloading ? "Downloading..." : "Download"}
+                  {downloading ? t('downloading') : t('download')}
                 </Button>
                 
                 {downloading && (
                   <div className="space-y-1 animate-in">
                     <Progress value={progress} />
                     <p className="text-sm text-center text-muted-foreground">
-                      {progress.toFixed(1)}% Complete
+                      {progress.toFixed(1)}% {t('complete')}
                     </p>
                   </div>
                 )}
@@ -276,6 +279,7 @@ const VideoDownloader = () => {
           )}
         </div>
       </Card>
+      <LanguageSwitcher />
     </div>
   );
 };
