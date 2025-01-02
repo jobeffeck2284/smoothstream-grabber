@@ -13,7 +13,11 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
   const [language, setLanguage] = useState<Language>('en');
 
   const t = (key: TranslationKey): string => {
-    return translations[language][key];
+    const translation = translations[language][key];
+    if (typeof translation === 'string') {
+      return translation;
+    }
+    return JSON.stringify(translation);
   };
 
   return (

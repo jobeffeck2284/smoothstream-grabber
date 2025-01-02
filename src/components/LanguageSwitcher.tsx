@@ -12,12 +12,11 @@ export const LanguageSwitcher = () => {
   return (
     <Button
       variant="outline"
-      size="icon"
-      className="fixed bottom-4 right-4"
+      className="fixed bottom-4 right-4 min-w-[80px] h-10 px-4"
       onClick={toggleLanguage}
     >
-      <Languages className="h-4 w-4" />
-      <span className="ml-2 text-xs">{language.toUpperCase()}</span>
+      <Languages className="h-5 w-5 mr-2" />
+      <span className="text-sm">{language.toUpperCase()}</span>
     </Button>
   );
 };

@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Download, Youtube } from 'lucide-react';
+import { Youtube } from 'lucide-react';
 import VideoInfo from './VideoInfo';
 import QualitySelector from './QualitySelector';
 import AudioQualitySelector from './AudioQualitySelector';
@@ -15,33 +13,12 @@ import { RunningSanta } from './RunningSanta';
 import { YoutubeScroll } from './YoutubeScroll';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { useLanguage } from '@/contexts/LanguageContext';
+import VideoUrlInput from './VideoUrlInput';
+import DownloadProgress from './DownloadProgress';
+import DownloadButton from './DownloadButton';
+import type { VideoDetails } from './VideoDownloader.types';
 
-export interface VideoFormat {
-  format_id: string;
-  ext: string;
-  resolution: string;
-  filesize: number;
-  format_note: string;
-}
-
-export interface AudioFormat {
-  format_id: string;
-  ext: string;
-  filesize: number;
-  format_note: string;
-  abr: number;
-}
-
-export interface VideoDetails {
-  title: string;
-  duration: string;
-  views: number;
-  thumbnail: string;
-  video_formats: VideoFormat[];
-  audio_formats: AudioFormat[];
-}
-
-const VideoDownloader = () => {
+export const VideoDownloader = () => {
   const { t } = useLanguage();
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -159,16 +136,16 @@ const VideoDownloader = () => {
       }
 
       toast({
-        title: "Download Complete",
+        title: t('downloadComplete'),
         description: (
           <div className="flex flex-col space-y-2">
-            <p>Video downloaded successfully!</p>
+            <p>{t('videoDownloaded')}</p>
             <Button 
               variant="outline" 
               size="sm" 
               onClick={openDownloadFolder}
             >
-              Open Download Folder
+              {t('openFolder')}
             </Button>
           </div>
         ),
@@ -209,24 +186,12 @@ const VideoDownloader = () => {
             </p>
           </div>
 
-          <div className="flex gap-2">
-            <Input
-              placeholder={t('enterUrl')}
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              className="flex-1"
-            />
-            <Button
-              onClick={fetchVideoInfo}
-              disabled={loading || !url}
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                t('fetchInfo')
-              )}
-            </Button>
-          </div>
+          <VideoUrlInput
+            url={url}
+            loading={loading}
+            onUrlChange={setUrl}
+            onFetchInfo={fetchVideoInfo}
+          />
 
           {videoDetails && (
             <div className="space-y-4 animate-in">
@@ -253,27 +218,16 @@ const VideoDownloader = () => {
               </div>
               
               <div className="space-y-2">
-                <Button
-                  className="w-full"
+                <DownloadButton
+                  downloading={downloading}
+                  disabled={!selectedVideoFormat || !selectedAudioFormat}
                   onClick={downloadVideo}
-                  disabled={downloading || !selectedVideoFormat || !selectedAudioFormat}
-                >
-                  {downloading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Download className="h-4 w-4 mr-2" />
-                  )}
-                  {downloading ? t('downloading') : t('download')}
-                </Button>
+                />
                 
-                {downloading && (
-                  <div className="space-y-1 animate-in">
-                    <Progress value={progress} />
-                    <p className="text-sm text-center text-muted-foreground">
-                      {progress.toFixed(1)}% {t('complete')}
-                    </p>
-                  </div>
-                )}
+                <DownloadProgress
+                  downloading={downloading}
+                  progress={progress}
+                />
               </div>
             </div>
           )}
