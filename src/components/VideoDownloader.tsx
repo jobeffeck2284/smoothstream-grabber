@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Loader2, Download, Youtube } from 'lucide-react';
 import VideoInfo from './VideoInfo';
 import QualitySelector from './QualitySelector';
@@ -12,6 +12,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { Settings } from './Settings';
 import { SnowEffect } from './SnowEffect';
 import { RunningSanta } from './RunningSanta';
+import { YoutubeScroll } from './YoutubeScroll';
 
 export interface VideoFormat {
   format_id: string;
@@ -49,11 +50,25 @@ const VideoDownloader = () => {
   const [savePath, setSavePath] = useState('downloads');
   const [showSnow, setShowSnow] = useState(false);
   const [showSanta, setShowSanta] = useState(false);
+  const [showYoutubeScroll, setShowYoutubeScroll] = useState(false);
   const { toast } = useToast();
 
-  const handleSettingsChange = ({ showSnow, showSanta }: { showSnow: boolean; showSanta: boolean }) => {
+  const handleSettingsChange = ({ 
+    showSnow, 
+    showSanta, 
+    showYoutubeScroll 
+  }: { 
+    showSnow: boolean; 
+    showSanta: boolean;
+    showYoutubeScroll: boolean;
+  }) => {
     setShowSnow(showSnow);
     setShowSanta(showSanta);
+    setShowYoutubeScroll(showYoutubeScroll);
+  };
+
+  const openDownloadFolder = () => {
+    window.open(savePath, '_blank');
   };
 
   const fetchVideoInfo = async () => {
@@ -141,8 +156,20 @@ const VideoDownloader = () => {
       }
 
       toast({
-        title: "Success",
-        description: "Video downloaded successfully!",
+        title: "Download Complete",
+        description: (
+          <div className="flex flex-col space-y-2">
+            <p>Video downloaded successfully!</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={openDownloadFolder}
+            >
+              Open Download Folder
+            </Button>
+          </div>
+        ),
+        duration: 5000,
       });
     } catch (error) {
       console.error('Download error:', error);
@@ -162,6 +189,7 @@ const VideoDownloader = () => {
       <div className="gradient-bg" />
       {showSnow && <SnowEffect />}
       {showSanta && <RunningSanta />}
+      {showYoutubeScroll && <YoutubeScroll />}
       
       <div className="fixed top-4 right-4 flex gap-2">
         <ThemeToggle />

@@ -15,21 +15,28 @@ interface SettingsProps {
   onSettingsChange: (settings: {
     showSnow: boolean;
     showSanta: boolean;
+    showYoutubeScroll: boolean;
   }) => void;
 }
 
 export function Settings({ onSettingsChange }: SettingsProps) {
   const [showSnow, setShowSnow] = useState(false);
   const [showSanta, setShowSanta] = useState(false);
+  const [showYoutubeScroll, setShowYoutubeScroll] = useState(false);
 
   const handleSnowToggle = (checked: boolean) => {
     setShowSnow(checked);
-    onSettingsChange({ showSnow: checked, showSanta });
+    onSettingsChange({ showSnow: checked, showSanta, showYoutubeScroll });
   };
 
   const handleSantaToggle = (checked: boolean) => {
     setShowSanta(checked);
-    onSettingsChange({ showSnow, showSanta: checked });
+    onSettingsChange({ showSnow, showSanta: checked, showYoutubeScroll });
+  };
+
+  const handleYoutubeScrollToggle = (checked: boolean) => {
+    setShowYoutubeScroll(checked);
+    onSettingsChange({ showSnow, showSanta, showYoutubeScroll: checked });
   };
 
   return (
@@ -66,6 +73,16 @@ export function Settings({ onSettingsChange }: SettingsProps) {
               id="santa"
               checked={showSanta}
               onCheckedChange={handleSantaToggle}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <label htmlFor="youtube-scroll" className="text-sm font-medium">
+              Show YouTube Scroll Animation
+            </label>
+            <Switch
+              id="youtube-scroll"
+              checked={showYoutubeScroll}
+              onCheckedChange={handleYoutubeScrollToggle}
             />
           </div>
         </div>
