@@ -1,5 +1,5 @@
 import { Card } from '@/components/ui/card';
-import type { VideoDetails } from './VideoDownloader';
+import type { VideoDetails } from '@/types/video.types';
 
 interface VideoInfoProps {
   details: VideoDetails;
@@ -7,12 +7,12 @@ interface VideoInfoProps {
 
 const VideoInfo = ({ details }: VideoInfoProps) => {
   return (
-    <Card className="p-4 space-y-3">
+    <Card className="p-4 space-y-3 animate-fade-in">
       <div className="aspect-video relative overflow-hidden rounded-lg">
         <img
           src={details.thumbnail}
           alt={details.title}
-          className="object-cover w-full h-full"
+          className="object-cover w-full h-full transition-transform hover:scale-105 duration-300"
         />
       </div>
       <div className="space-y-1">

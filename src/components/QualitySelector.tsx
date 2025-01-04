@@ -6,7 +6,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useLanguage } from '@/contexts/LanguageContext';
-import type { VideoFormat } from './VideoDownloader';
+import type { VideoFormat } from '@/types/video.types';
 
 interface QualitySelectorProps {
   formats: VideoFormat[];
@@ -27,7 +27,7 @@ const QualitySelector = ({
   });
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 animate-fade-in">
       <label className="text-sm font-medium">{t('selectQuality')}</label>
       <Select value={selectedFormat} onValueChange={onFormatSelect}>
         <SelectTrigger>
