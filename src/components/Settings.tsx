@@ -11,38 +11,27 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-interface SettingsProps {
-  onSettingsChange: (settings: {
-    showSnow: boolean;
-    showSanta: boolean;
-    showYoutubeScroll: boolean;
-  }) => void;
-}
-
-export function Settings({ onSettingsChange }: SettingsProps) {
+export function Settings() {
   const [showSnow, setShowSnow] = useState(false);
   const [showSanta, setShowSanta] = useState(false);
   const [showYoutubeScroll, setShowYoutubeScroll] = useState(false);
 
   const handleSnowToggle = (checked: boolean) => {
     setShowSnow(checked);
-    onSettingsChange({ showSnow: checked, showSanta, showYoutubeScroll });
   };
 
   const handleSantaToggle = (checked: boolean) => {
     setShowSanta(checked);
-    onSettingsChange({ showSnow, showSanta: checked, showYoutubeScroll });
   };
 
   const handleYoutubeScrollToggle = (checked: boolean) => {
     setShowYoutubeScroll(checked);
-    onSettingsChange({ showSnow, showSanta, showYoutubeScroll: checked });
   };
 
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" className="z-50">
           <SettingsIcon className="h-5 w-5" />
           <span className="sr-only">Open settings</span>
         </Button>
