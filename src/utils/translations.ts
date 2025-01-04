@@ -18,7 +18,9 @@ export type TranslationKey =
   | 'downloading'
   | 'download'
   | 'complete'
-  | 'fetchInfo';
+  | 'fetchInfo'
+  | 'error'
+  | 'downloadError';
 
 export const translations = {
   en: {
@@ -39,7 +41,9 @@ export const translations = {
     downloading: 'Downloading...',
     download: 'Download',
     complete: 'Complete',
-    fetchInfo: 'Fetch Info'
+    fetchInfo: 'Fetch Info',
+    error: 'Error',
+    downloadError: 'Download failed'
   },
   ru: {
     enterUrl: 'Введите URL YouTube',
@@ -59,6 +63,8 @@ export const translations = {
     downloading: 'Загрузка...',
     download: 'Скачать',
     complete: 'Завершено',
-    fetchInfo: 'Получить информацию'
+    fetchInfo: 'Получить информацию',
+    error: 'Ошибка',
+    downloadError: 'Ошибка загрузки'
   }
 };
