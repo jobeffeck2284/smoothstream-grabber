@@ -14,6 +14,13 @@ export interface AudioFormat {
   abr: number;
 }
 
+export interface PlaylistItem {
+  id: string;
+  title: string;
+  duration: string;
+  thumbnail: string;
+}
+
 export interface VideoDetails {
   title: string;
   duration: string;
@@ -21,4 +28,6 @@ export interface VideoDetails {
   thumbnail: string;
   video_formats: VideoFormat[];
   audio_formats: AudioFormat[];
+  isPlaylist?: boolean;
+  playlist_items?: PlaylistItem[];
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Youtube } from 'lucide-react';
 import VideoInfo from './VideoInfo';
@@ -16,7 +17,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import VideoUrlInput from './VideoUrlInput';
 import DownloadProgress from './DownloadProgress';
 import DownloadButton from './DownloadButton';
-import type { VideoDetails } from './VideoDownloader.types';
+import PlaylistSelector from './PlaylistSelector';
+import type { VideoDetails, PlaylistItem } from './VideoDownloader.types';
 
 export const VideoDownloader = () => {
   const { t } = useLanguage();
@@ -32,6 +34,7 @@ export const VideoDownloader = () => {
   const [showSanta, setShowSanta] = useState(false);
   const [showYoutubeScroll, setShowYoutubeScroll] = useState(false);
   const { toast } = useToast();
+  const [selectedVideos, setSelectedVideos] = useState<PlaylistItem[]>([]);
 
   const handleSettingsChange = ({ 
     showSnow, 
@@ -92,7 +95,7 @@ export const VideoDownloader = () => {
     if (!selectedVideoFormat || !selectedAudioFormat) {
       toast({
         title: "Error",
-        description: "Please select both video and audio formats",
+        description: t('selectFormats'),
         variant: "destructive"
       });
       return;
@@ -112,6 +115,7 @@ export const VideoDownloader = () => {
           video_format: selectedVideoFormat,
           audio_format: selectedAudioFormat,
           save_path: savePath,
+          selected_videos: selectedVideos.map(video => video.id),
         }),
       });
 
@@ -130,32 +134,23 @@ export const VideoDownloader = () => {
           if (data.progress) {
             setProgress(data.progress);
           }
+          if (data.downloadUrl) {
+            window.location.href = data.downloadUrl;
+            toast({
+              title: t('downloadComplete'),
+              description: t('videoDownloaded'),
+              duration: 5000,
+            });
+          }
         } catch (e) {
           console.log('Progress update:', text);
         }
       }
-
-      toast({
-        title: t('downloadComplete'),
-        description: (
-          <div className="flex flex-col space-y-2">
-            <p>{t('videoDownloaded')}</p>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={openDownloadFolder}
-            >
-              {t('openFolder')}
-            </Button>
-          </div>
-        ),
-        duration: 5000,
-      });
     } catch (error) {
       console.error('Download error:', error);
       toast({
         title: "Error",
-        description: "Download failed",
+        description: t('downloadFailed'),
         variant: "destructive"
       });
     } finally {
@@ -165,18 +160,18 @@ export const VideoDownloader = () => {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-8">
-      <div className="gradient-bg" />
+    <div className="min-h-screen p-4 md:p-8 relative">
+      <div className="animated-gradient-bg" />
       {showSnow && <SnowEffect />}
       {showSanta && <RunningSanta />}
       {showYoutubeScroll && <YoutubeScroll />}
       
-      <div className="fixed top-4 right-4 flex gap-2">
+      <div className="fixed top-4 right-4 z-50 flex gap-2">
         <ThemeToggle />
         <Settings onSettingsChange={handleSettingsChange} />
       </div>
 
-      <Card className="max-w-2xl mx-auto p-6 backdrop-blur-sm bg-background/80">
+      <Card className="max-w-2xl mx-auto p-6 backdrop-blur-sm bg-background/80 mt-16">
         <div className="space-y-6 animate-in">
           <div className="flex flex-col items-center gap-2 text-center">
             <Youtube className="h-10 w-10 text-primary" />
@@ -196,16 +191,25 @@ export const VideoDownloader = () => {
           {videoDetails && (
             <div className="space-y-4 animate-in">
               <VideoInfo details={videoDetails} />
-              <QualitySelector
-                formats={videoDetails.video_formats}
-                selectedFormat={selectedVideoFormat}
-                onFormatSelect={setSelectedVideoFormat}
-              />
-              <AudioQualitySelector
-                formats={videoDetails.audio_formats}
-                selectedFormat={selectedAudioFormat}
-                onFormatSelect={setSelectedAudioFormat}
-              />
+              {videoDetails.isPlaylist ? (
+                <PlaylistSelector
+                  items={videoDetails.playlist_items}
+                  onSelectionChange={setSelectedVideos}
+                />
+              ) : (
+                <>
+                  <QualitySelector
+                    formats={videoDetails.video_formats}
+                    selectedFormat={selectedVideoFormat}
+                    onFormatSelect={setSelectedVideoFormat}
+                  />
+                  <AudioQualitySelector
+                    formats={videoDetails.audio_formats}
+                    selectedFormat={selectedAudioFormat}
+                    onFormatSelect={setSelectedAudioFormat}
+                  />
+                </>
+              )}
               
               <div className="space-y-2">
                 <label className="text-sm font-medium">{t('savePath')}</label>

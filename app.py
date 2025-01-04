@@ -38,30 +38,47 @@ def get_video_info():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             
-            video_formats = [{
-                'format_id': f['format_id'],
-                'ext': f['ext'],
-                'resolution': f.get('resolution', 'N/A'),
-                'filesize': f.get('filesize', 0),
-                'format_note': f.get('format_note', '')
-            } for f in info['formats'] if f.get('resolution') != 'audio only']
-            
-            audio_formats = [{
-                'format_id': f['format_id'],
-                'ext': f['ext'],
-                'filesize': f.get('filesize', 0),
-                'format_note': f.get('format_note', ''),
-                'abr': f.get('abr', 0)
-            } for f in info['formats'] if f.get('resolution') == 'audio only']
-            
-            return jsonify({
-                'title': info['title'],
-                'duration': format_duration(info['duration']),
-                'views': info['view_count'],
-                'thumbnail': info['thumbnail'],
-                'video_formats': video_formats,
-                'audio_formats': audio_formats
-            })
+            if '_type' in info and info['_type'] == 'playlist':
+                # Это плейлист
+                playlist_items = [{
+                    'id': entry['id'],
+                    'title': entry['title'],
+                    'duration': format_duration(entry['duration']) if 'duration' in entry else 'N/A',
+                    'thumbnail': entry.get('thumbnail', '')
+                } for entry in info['entries']]
+                
+                return jsonify({
+                    'title': info['title'],
+                    'isPlaylist': True,
+                    'playlist_items': playlist_items
+                })
+            else:
+                # Это отдельное видео
+                video_formats = [{
+                    'format_id': f['format_id'],
+                    'ext': f['ext'],
+                    'resolution': f.get('resolution', 'N/A'),
+                    'filesize': f.get('filesize', 0),
+                    'format_note': f.get('format_note', '')
+                } for f in info['formats'] if f.get('resolution') != 'audio only']
+                
+                audio_formats = [{
+                    'format_id': f['format_id'],
+                    'ext': f['ext'],
+                    'filesize': f.get('filesize', 0),
+                    'format_note': f.get('format_note', ''),
+                    'abr': f.get('abr', 0)
+                } for f in info['formats'] if f.get('resolution') == 'audio only']
+                
+                return jsonify({
+                    'title': info['title'],
+                    'duration': format_duration(info['duration']),
+                    'views': info['view_count'],
+                    'thumbnail': info['thumbnail'],
+                    'video_formats': video_formats,
+                    'audio_formats': audio_formats,
+                    'isPlaylist': False
+                })
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
@@ -71,46 +88,56 @@ def download_video():
     video_format = request.json.get('video_format')
     audio_format = request.json.get('audio_format')
     save_path = request.json.get('save_path', 'downloads')
+    selected_videos = request.json.get('selected_videos', [])
     
     if not os.path.exists(save_path):
         os.makedirs(save_path)
-    
-    def progress_hook(d):
-        if d['status'] == 'downloading':
-            progress = (d['downloaded_bytes'] / d['total_bytes']) * 100 if 'total_bytes' in d else 0
-            return json.dumps({'progress': progress})
     
     download_id = str(uuid.uuid4())
     output_template = f'{save_path}/%(title)s_{download_id}.%(ext)s'
     
     ydl_opts = {
         'format': f'{video_format}+{audio_format}',
-        'progress_hooks': [progress_hook],
         'outtmpl': output_template,
         'merge_output_format': 'mp4',
-        'keepvideo': True,  # Сохраняем исходные файлы
+        'keepvideo': True,
     }
+    
+    if selected_videos:  # Если это плейлист
+        ydl_opts['playlist_items'] = ','.join(str(i+1) for i in range(len(selected_videos)))
     
     def generate():
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url)
-                filename = ydl.prepare_filename(info)
-                final_filename = filename.replace('.' + info['ext'], '.mp4')
-                
-                # Создаем временную ссылку
-                temp_downloads[download_id] = {
-                    'path': final_filename,
-                    'created_at': time.time()
-                }
-                
-                # Устанавливаем таймер на удаление через час
-                Timer(3600, cleanup_file, args=[final_filename, download_id]).start()
-                
-                yield json.dumps({
-                    'progress': 100,
-                    'downloadUrl': f'/download/{download_id}'
-                })
+                if '_type' in info and info['_type'] == 'playlist':
+                    # Обработка плейлиста
+                    for entry in info['entries']:
+                        if entry:
+                            filename = ydl.prepare_filename(entry)
+                            final_filename = filename.replace('.' + entry['ext'], '.mp4')
+                            yield json.dumps({
+                                'progress': 100,
+                                'downloadUrl': f'/download/{download_id}'
+                            })
+                else:
+                    # Обработка одного видео
+                    filename = ydl.prepare_filename(info)
+                    final_filename = filename.replace('.' + info['ext'], '.mp4')
+                    
+                    # Создаем временную ссылку
+                    temp_downloads[download_id] = {
+                        'path': final_filename,
+                        'created_at': time.time()
+                    }
+                    
+                    # Устанавливаем таймер на удаление через час
+                    Timer(3600, cleanup_file, args=[final_filename, download_id]).start()
+                    
+                    yield json.dumps({
+                        'progress': 100,
+                        'downloadUrl': f'/download/{download_id}'
+                    })
                 
         except Exception as e:
             yield json.dumps({'error': str(e)})
