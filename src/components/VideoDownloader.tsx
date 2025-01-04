@@ -1,24 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
 import { Youtube } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import VideoInfo from './VideoInfo';
 import QualitySelector from './QualitySelector';
 import AudioQualitySelector from './AudioQualitySelector';
 import { ThemeToggle } from './ThemeToggle';
 import { Settings } from './Settings';
-import { SnowEffect } from './SnowEffect';
-import { RunningSanta } from './RunningSanta';
-import { YoutubeScroll } from './YoutubeScroll';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { useLanguage } from '@/contexts/LanguageContext';
 import VideoUrlInput from './VideoUrlInput';
 import DownloadProgress from './DownloadProgress';
 import DownloadButton from './DownloadButton';
 import PlaylistSelector from './PlaylistSelector';
+import DownloadHistory from './DownloadHistory';
 import type { VideoDetails, PlaylistItem } from './VideoDownloader.types';
+
+interface DownloadHistoryItem {
+  title: string;
+  url: string;
+  timestamp: number;
+}
 
 export const VideoDownloader = () => {
   const { t } = useLanguage();
@@ -30,35 +33,26 @@ export const VideoDownloader = () => {
   const [selectedVideoFormat, setSelectedVideoFormat] = useState<string>('');
   const [selectedAudioFormat, setSelectedAudioFormat] = useState<string>('');
   const [savePath, setSavePath] = useState('downloads');
-  const [showSnow, setShowSnow] = useState(false);
-  const [showSanta, setShowSanta] = useState(false);
-  const [showYoutubeScroll, setShowYoutubeScroll] = useState(false);
-  const { toast } = useToast();
   const [selectedVideos, setSelectedVideos] = useState<PlaylistItem[]>([]);
+  const [downloadHistory, setDownloadHistory] = useState<DownloadHistoryItem[]>(() => {
+    const saved = localStorage.getItem('downloadHistory');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const { toast } = useToast();
 
-  const handleSettingsChange = ({ 
-    showSnow, 
-    showSanta, 
-    showYoutubeScroll 
-  }: { 
-    showSnow: boolean; 
-    showSanta: boolean;
-    showYoutubeScroll: boolean;
-  }) => {
-    setShowSnow(showSnow);
-    setShowSanta(showSanta);
-    setShowYoutubeScroll(showYoutubeScroll);
-  };
+  useEffect(() => {
+    localStorage.setItem('downloadHistory', JSON.stringify(downloadHistory));
+  }, [downloadHistory]);
 
-  const openDownloadFolder = () => {
-    window.open(savePath, '_blank');
+  const clearHistory = () => {
+    setDownloadHistory([]);
   };
 
   const fetchVideoInfo = async () => {
     if (!url) {
       toast({
         title: "Error",
-        description: "Please enter a YouTube URL",
+        description: t('enterUrl'),
         variant: "destructive"
       });
       return;
@@ -83,7 +77,7 @@ export const VideoDownloader = () => {
       console.error('Error fetching video info:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch video information",
+        description: t('fetchError'),
         variant: "destructive"
       });
     } finally {
@@ -129,21 +123,38 @@ export const VideoDownloader = () => {
         if (done) break;
 
         const text = new TextDecoder().decode(value);
-        try {
-          const data = JSON.parse(text);
-          if (data.progress) {
-            setProgress(data.progress);
+        const lines = text.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(5));
+              if (data.progress) {
+                setProgress(data.progress);
+              }
+              if (data.downloadUrl) {
+                // Добавляем в историю
+                if (videoDetails) {
+                  setDownloadHistory(prev => [{
+                    title: videoDetails.title,
+                    url: url,
+                    timestamp: Date.now()
+                  }, ...prev]);
+                }
+                
+                // Открываем ссылку для скачивания
+                window.location.href = `http://localhost:5000${data.downloadUrl}`;
+                
+                toast({
+                  title: t('downloadComplete'),
+                  description: t('videoDownloaded'),
+                  duration: 5000,
+                });
+              }
+            } catch (e) {
+              console.log('Progress update:', text);
+            }
           }
-          if (data.downloadUrl) {
-            window.location.href = data.downloadUrl;
-            toast({
-              title: t('downloadComplete'),
-              description: t('videoDownloaded'),
-              duration: 5000,
-            });
-          }
-        } catch (e) {
-          console.log('Progress update:', text);
         }
       }
     } catch (error) {
@@ -162,13 +173,10 @@ export const VideoDownloader = () => {
   return (
     <div className="min-h-screen p-4 md:p-8 relative">
       <div className="animated-gradient-bg" />
-      {showSnow && <SnowEffect />}
-      {showSanta && <RunningSanta />}
-      {showYoutubeScroll && <YoutubeScroll />}
       
       <div className="fixed top-4 right-4 z-50 flex gap-2">
         <ThemeToggle />
-        <Settings onSettingsChange={handleSettingsChange} />
+        <Settings />
       </div>
 
       <Card className="max-w-2xl mx-auto p-6 backdrop-blur-sm bg-background/80 mt-16">
@@ -234,6 +242,13 @@ export const VideoDownloader = () => {
                 />
               </div>
             </div>
+          )}
+
+          {downloadHistory.length > 0 && (
+            <DownloadHistory
+              history={downloadHistory}
+              onClear={clearHistory}
+            />
           )}
         </div>
       </Card>

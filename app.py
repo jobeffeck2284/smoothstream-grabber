@@ -96,11 +96,23 @@ def download_video():
     download_id = str(uuid.uuid4())
     output_template = f'{save_path}/%(title)s_{download_id}.%(ext)s'
     
+    def progress_hook(d):
+        if d['status'] == 'downloading':
+            try:
+                total = d.get('total_bytes', 0) or d.get('total_bytes_estimate', 0)
+                downloaded = d.get('downloaded_bytes', 0)
+                if total > 0:
+                    progress = (downloaded / total) * 100
+                    yield f"data: {json.dumps({'progress': progress})}\n\n"
+            except Exception as e:
+                print(f"Error in progress hook: {str(e)}")
+
     ydl_opts = {
         'format': f'{video_format}+{audio_format}',
         'outtmpl': output_template,
         'merge_output_format': 'mp4',
         'keepvideo': True,
+        'progress_hooks': [progress_hook],
     }
     
     if selected_videos:  # Если это плейлист
@@ -116,6 +128,11 @@ def download_video():
                         if entry:
                             filename = ydl.prepare_filename(entry)
                             final_filename = filename.replace('.' + entry['ext'], '.mp4')
+                            temp_downloads[download_id] = {
+                                'path': final_filename,
+                                'created_at': time.time()
+                            }
+                            Timer(3600, cleanup_file, args=[final_filename, download_id]).start()
                             yield json.dumps({
                                 'progress': 100,
                                 'downloadUrl': f'/download/{download_id}'
